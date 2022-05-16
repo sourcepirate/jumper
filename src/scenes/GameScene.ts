@@ -1,11 +1,15 @@
 import { Scene, Math, Physics, Types, Tilemaps, GameObjects } from "phaser";
+import { Carrot } from '../sprites/Carrot'
 
 
 export default class GameScene extends Scene {
 
-    private player?: Physics.Arcade.Sprite ;
+    private player?: Physics.Arcade.Sprite;
     private platforms?: Physics.Arcade.StaticGroup;
     private cursors?: Types.Input.Keyboard.CursorKeys;
+    private carrots?: Physics.Arcade.Group;
+    private carrotsCollected: number = 0;
+    private carrotsCollectedText: any;
 
     constructor() {
         super('GameScene');
@@ -17,6 +21,7 @@ export default class GameScene extends Scene {
         // -- initalizing player
 
         this.load.image('bunny_stand', 'assets/PNG/Players/bunny1_stand.png');
+        this.load.image('carrot', 'assets/PNG/Items/carrot.png');
         this.cursors = this.input.keyboard.createCursorKeys();
     }
 
@@ -45,6 +50,22 @@ export default class GameScene extends Scene {
 
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setDeadzone(this.scale.width * 1.5);
+
+        this.carrots = this.physics.add.group({
+            classType: Carrot
+        });
+
+        this.carrots.get(240, 320, 'carrot').setScale(0.5);
+        this.physics.add.collider(this.platforms, this.carrots);
+        this.physics.add.overlap(
+            this.player,
+            this.carrots,
+            this.handleCollectCarrot, // called on overlap
+            undefined,
+            this
+        );
+        const style = { color: '#000', fontSize: 24 };
+        this.carrotsCollectedText = this.add.text(240, 10, `Carrots: ${this.carrotsCollected}`, style).setScrollFactor(0).setOrigin(0.5, 0);
     }
 
     update(): void {
@@ -52,22 +73,23 @@ export default class GameScene extends Scene {
         this.platforms?.children.iterate(child => {
             const platform = child;
             const scrollY = this.cameras.main.scrollY;
-            if(platform.y >= scrollY + 700) {
+            if (platform.y >= scrollY + 700) {
                 platform.y = scrollY - Math.Between(50, 100);
                 platform.body.updateFromGameObject();
+                this.addAboveCarrot(platform);
             }
         })
 
 
         const isPlayerTouchingDown = this.player?.body.touching.down;
-        if(isPlayerTouchingDown) {
+        if (isPlayerTouchingDown) {
             this.player?.setVelocityY(-300);
         }
 
 
-        if(this.cursors?.left.isDown && !isPlayerTouchingDown) {
+        if (this.cursors?.left.isDown && !isPlayerTouchingDown) {
             this.player?.setVelocityX(-200);
-        } else if(this.cursors?.right.isDown && !isPlayerTouchingDown) {
+        } else if (this.cursors?.right.isDown && !isPlayerTouchingDown) {
             this.player?.setVelocityX(200);
         } else {
             this.player?.setVelocityX(0);
@@ -84,8 +106,27 @@ export default class GameScene extends Scene {
 
         if (sprite.x < -halfWidth) {
             sprite.x = gameWidth + halfWidth;
-        } else if(sprite.x > gameWidth+halfWidth) {
+        } else if (sprite.x > gameWidth + halfWidth) {
             sprite.x = -halfWidth;
         }
+    }
+
+
+    addAboveCarrot(sprite: any) {
+        const y = sprite.y - sprite.displayHeight;
+        const carrot = this.carrots?.get(sprite.x, y, 'carrot').setScale(0.5);
+        carrot.setActive(true);
+        carrot.setVisible(true);
+        this.add.existing(carrot);
+        carrot.body.setSize(carrot.width, carrot.height);
+        this.physics.world.enable(carrot);
+        return carrot;
+    }
+
+    handleCollectCarrot(player: any, carrot: any) {
+        this.carrots?.killAndHide(carrot);
+        this.physics.world.disableBody(carrot.body);
+        this.carrotsCollected += 1;
+        this.carrotsCollectedText.text = `Carrots: ${this.carrotsCollected}`;
     }
 }
