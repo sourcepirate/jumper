@@ -15,6 +15,10 @@ export default class GameScene extends Scene {
         super('GameScene');
     }
 
+    init(){
+        this.carrotsCollected = 0;
+    }
+
     preload() {
         this.load.image('bg_layer_1', 'assets/PNG/Background/bg_layer1.png');
         this.load.image('grass', 'assets/PNG/Environment/ground_grass.png');
@@ -22,6 +26,8 @@ export default class GameScene extends Scene {
 
         this.load.image('bunny_stand', 'assets/PNG/Players/bunny1_stand.png');
         this.load.image('carrot', 'assets/PNG/Items/carrot.png');
+        this.load.image('bunny_jump', 'assets/PNG/Players/bunny1_jump.png');
+        this.load.image('bunny_hurt', 'assets/PNG/Players/bunny1_hurt.png');
         this.cursors = this.input.keyboard.createCursorKeys();
     }
 
@@ -65,7 +71,7 @@ export default class GameScene extends Scene {
             this
         );
         const style = { color: '#000', fontSize: 24 };
-        this.carrotsCollectedText = this.add.text(240, 10, `Carrots: ${this.carrotsCollected}`, style).setScrollFactor(0).setOrigin(0.5, 0);
+        this.carrotsCollectedText = this.add.text(240, 10, 'Carrots: 0', style).setScrollFactor(0).setOrigin(0.5, 0);
     }
 
     update(): void {
@@ -84,6 +90,11 @@ export default class GameScene extends Scene {
         const isPlayerTouchingDown = this.player?.body.touching.down;
         if (isPlayerTouchingDown) {
             this.player?.setVelocityY(-300);
+            this.player?.setTexture('bunny_jump');
+        }
+        const yVelocity = this.player?.body.velocity.y;
+        if (yVelocity > 0 && this.player?.texture.key != 'bunny_stand') {
+            this.player?.setTexture('bunny_stand');
         }
 
 
@@ -96,6 +107,12 @@ export default class GameScene extends Scene {
         }
 
         this.horizontalWrap(this.player);
+        const bottomPlatform = this.findBottomMostPlatform();
+
+        if (this.player.y > bottomPlatform.y + 200) {
+            this.player?.setTexture('bunny_hurt');
+            this.scene.start('game-over');
+        }
 
     }
 
@@ -128,5 +145,18 @@ export default class GameScene extends Scene {
         this.physics.world.disableBody(carrot.body);
         this.carrotsCollected += 1;
         this.carrotsCollectedText.text = `Carrots: ${this.carrotsCollected}`;
+    }
+
+    findBottomMostPlatform() {
+        const platforms = this.platforms?.getChildren();
+        let bottomPlatform = platforms[0];
+        for(let i = 1; i < platforms?.length; i++) {
+            const platform = platforms[i];
+            if (platform.y <  bottomPlatform.y) {
+                continue;
+            }
+            bottomPlatform = platform;
+        }
+        return bottomPlatform;
     }
 }
