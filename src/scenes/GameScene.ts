@@ -1,25 +1,27 @@
-import { Scene, Math, Physics } from "phaser";
+import { Scene, Math, Physics, Types, Tilemaps, GameObjects } from "phaser";
 
 
 export default class GameScene extends Scene {
 
     private player?: Physics.Arcade.Sprite ;
     private platforms?: Physics.Arcade.StaticGroup;
+    private cursors?: Types.Input.Keyboard.CursorKeys;
 
     constructor() {
         super('GameScene');
     }
 
     preload() {
-        this.load.image('bg_layer_1', 'assets/PNG/Background/bg_layer1.png').setScrollFactor(1, 0);
+        this.load.image('bg_layer_1', 'assets/PNG/Background/bg_layer1.png');
         this.load.image('grass', 'assets/PNG/Environment/ground_grass.png');
         // -- initalizing player
 
         this.load.image('bunny_stand', 'assets/PNG/Players/bunny1_stand.png');
+        this.cursors = this.input.keyboard.createCursorKeys();
     }
 
     create() {
-        this.add.image(240, 320, 'bg_layer_1');
+        this.add.image(240, 320, 'bg_layer_1').setScrollFactor(1, 0);
         // this.physics.add.image(240, 320, 'grass').setScale(0.5);
         this.platforms = this.physics.add.staticGroup();
 
@@ -42,6 +44,7 @@ export default class GameScene extends Scene {
         this.physics.add.collider(this.platforms, this.player);
 
         this.cameras.main.startFollow(this.player);
+        this.cameras.main.setDeadzone(this.scale.width * 1.5);
     }
 
     update(): void {
@@ -62,5 +65,27 @@ export default class GameScene extends Scene {
         }
 
 
+        if(this.cursors?.left.isDown && !isPlayerTouchingDown) {
+            this.player?.setVelocityX(-200);
+        } else if(this.cursors?.right.isDown && !isPlayerTouchingDown) {
+            this.player?.setVelocityX(200);
+        } else {
+            this.player?.setVelocityX(0);
+        }
+
+        this.horizontalWrap(this.player);
+
+    }
+
+
+    horizontalWrap(sprite: any) {
+        const halfWidth = sprite.displayWidth * 0.5;
+        const gameWidth = this.scale.width;
+
+        if (sprite.x < -halfWidth) {
+            sprite.x = gameWidth + halfWidth;
+        } else if(sprite.x > gameWidth+halfWidth) {
+            sprite.x = -halfWidth;
+        }
     }
 }
