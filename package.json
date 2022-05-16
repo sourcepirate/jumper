@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "NODE_ENV=production parcel build index.html",
+    "build": "NODE_ENV=production parcel watch index.html && cp -r assets dist",
     "start": "cd dist && python3 -m http.server"
   },
   "author": "",

@@ -1,4 +1,4 @@
-import { Scene } from "phaser";
+import { Scene, Math } from "phaser";
 
 
 export default class GameScene extends Scene {
@@ -7,30 +7,29 @@ export default class GameScene extends Scene {
     }
 
     preload() {
-        this.load.setBaseURL('http://labs.phaser.io');
+        this.load.image('bg_layer_1', 'assets/PNG/Background/bg_layer1.png');
+        this.load.image('grass', 'assets/PNG/Environment/ground_grass.png');
+        // -- initalizing player
 
-        this.load.image('sky', 'assets/skies/space3.png');
-        this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-        this.load.image('red', 'assets/particles/red.png');
+        this.load.image('bunny_stand', 'assets/PNG/Players/bunny1_stand.png');
     }
 
     create() {
-        this.add.image(400, 300, 'sky');
+        this.add.image(240, 320, 'bg_layer_1');
+        // this.physics.add.image(240, 320, 'grass').setScale(0.5);
+        const platforms = this.physics.add.staticGroup();
 
-        var particles = this.add.particles('red');
+        for (let i = 0; i <= 5; i++) {
+            const x = Math.Between(80, 380);
+            const y = 150 * i;
 
-        var emitter = particles.createEmitter({
-            speed: 100,
-            scale: { start: 1, end: 0 },
-            blendMode: 'ADD'
-        });
+            const platform = platforms.create(x, y, 'grass');
+            platform.setScale(0.5);
 
-        var logo = this.physics.add.image(400, 100, 'logo');
+            platform.body.updateFromGameObject();
+        }
 
-        logo.setVelocity(100, 200);
-        logo.setBounce(1, 1);
-        logo.setCollideWorldBounds(true);
-
-        emitter.startFollow(logo);
+        const player = this.physics.add.sprite(240, 320, 'bunny_stand').setScale(0.5);
+        this.physics.add.collider(platforms, player);
     }
 }
